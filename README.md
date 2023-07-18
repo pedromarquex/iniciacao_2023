@@ -26,4 +26,4 @@ uvicorn server:app --reload
 
 - [x] setup
 - [x] rota que recebe um file e retorna o resultado do processamento
-- [] subir arquivo pro dropbox e retornar o link
+- [ ] subir arquivo pro dropbox e retornar o link
