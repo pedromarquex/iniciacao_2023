@@ -2,6 +2,14 @@
 
 ### Install dependencies
 
+Install the openbabel dependency on your system
+
+```shell
+sudo apt-get openbabel
+```
+
+Create a virtualenv and install the python dependencies
+
 ```shell
 pip install -r requirements.txt
 ```
