@@ -30,13 +30,13 @@ async def check_and_update_file_status():
         file.updated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         db.commit()
 
-    if file.status == "COMPLETED" and not file.converted:
-        filename = get_pdb_file_from_project_id(file.project_id)
-        extract_pdb_file_from_gz_file("tmp/" + filename)
-        convert_pdb_to_mol2()
-        print("Finished converting to mol2")
-        file.converted = True
-        db.commit()
+        if file.status == "COMPLETED" and not file.converted:
+            filename = get_pdb_file_from_project_id(file.project_id)
+            extract_pdb_file_from_gz_file("tmp/" + filename)
+            convert_pdb_to_mol2()
+            print("Finished converting to mol2")
+            file.converted = True
+            db.commit()
     
     db.close() 
 
@@ -58,6 +58,9 @@ async def create_upload_file(file: UploadFile):
     f = open("tmp/" + filename, "r").read()
 
     project_id = start_automodel_from_fasta_file(f)
+
+    if db.query(File).filter(File.project_id == project_id).first():
+        return {"message": "File already uploaded"}
     
     new_file = File(url=filename, project_id=project_id)
     db.add(new_file)
