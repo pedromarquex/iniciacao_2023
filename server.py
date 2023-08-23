@@ -11,7 +11,7 @@ from models import Base, File
 from util import (convert_pdb_to_mol2, extract_pdb_file_from_gz_file,
                   get_generated_files_from_project_id,
                   get_pdb_file_from_project_id,
-                  start_automodel_from_fasta_file)
+                  start_automodel_from_fasta_file, upload_file_to_dropbox)
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -33,9 +33,12 @@ async def check_and_update_file_status():
         if file.status == "COMPLETED" and not file.converted:
             filename = get_pdb_file_from_project_id(file.project_id)
             extract_pdb_file_from_gz_file("tmp/" + filename)
-            convert_pdb_to_mol2()
+            mol2_filename = convert_pdb_to_mol2()
             print("Finished converting to mol2")
             file.converted = True
+            uploaded_file_link = upload_file_to_dropbox(mol2_filename)
+            print(uploaded_file_link)
+            file.url = uploaded_file_link
             db.commit()
     
     db.close() 
@@ -57,12 +60,12 @@ async def create_upload_file(file: UploadFile):
 
     f = open("tmp/" + filename, "r").read()
 
-    project_id = start_automodel_from_fasta_file(f)
+    project = start_automodel_from_fasta_file(f)
 
-    if db.query(File).filter(File.project_id == project_id).first():
+    if db.query(File).filter(File.project_id == project.get('project_id')).first():
         return {"message": "File already uploaded"}
     
-    new_file = File(url=filename, project_id=project_id)
+    new_file = File(url=filename, project_id=project.get('project_id'), project_name=project.get('project_name'))
     db.add(new_file)
     db.commit()
     db.refresh(new_file)
