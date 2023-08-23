@@ -7,7 +7,7 @@ from datetime import datetime
 
 import requests
 
-token = "775f34af6f76fc32a515ca859f208ba3205ad088"
+from config import swissmodel_token
 
 
 def start_automodel_from_fasta_file(fasta_file):
@@ -26,7 +26,7 @@ def start_automodel_from_fasta_file(fasta_file):
 
     response = requests.post(
         "https://swissmodel.expasy.org/automodel",
-        headers={"Authorization": f"Token {token}"},
+        headers={"Authorization": f"Token {swissmodel_token}"},
         json={
             "target_sequences": sequence,
             "project_title": header
@@ -38,7 +38,7 @@ def start_automodel_from_fasta_file(fasta_file):
 
     project_id = response.json()["project_id"]
 
-    return project_id
+    return {"project_id": project_id, "project_name": header}
 
 
 def get_generated_files_from_project_id(project_id):
@@ -46,7 +46,7 @@ def get_generated_files_from_project_id(project_id):
         # Update the status from the server
         response = requests.get(
             f"https://swissmodel.expasy.org/project/{project_id}/models/summary/",
-            headers={"Authorization": f"Token {token}"})
+            headers={"Authorization": f"Token {swissmodel_token}"})
 
         # Update the status
         status = response.json()["status"]
@@ -79,7 +79,7 @@ def get_pdb_file_from_project_id(project_id):
             for data in response.iter_content():
                 handle.write(data)
 
-        print("Finished downloading", file_name)
+        return file_name
 
 
 def extract_pdb_file_from_gz_file(file):
@@ -97,6 +97,8 @@ def convert_pdb_to_mol2():
     os.system(f"obabel -ipdb tmp/model.pdb -omol2 -O files/{timestamp}_model.mol2")
     print("Finished converting the pdb file to a mol2 file")
     os.remove("tmp/model.pdb")
+    
+    return f"{timestamp}_model.mol2"
 
 
 def convert_pdb_to_mol2_with_pybel():
@@ -127,3 +129,24 @@ def convert_pdb_to_mol2_with_pybel():
 
 #     # convert the pdb file to a mol2 file
 #     convert_pdb_to_mol2()
+
+
+def upload_file_to_dropbox(filename):
+    print("Uploading the file to dropbox")
+    import dropbox
+    ACCESS_TOKEN = "sl.BkskrTx1yK6EOxsddr70C0TEJ_e9tr3THUTi2cJwpxoYIZxYOLovLQApBvDqwCOUwgJf5utzpmq_2PFYm7s3pT31HHg8uVmOMrnreABH1JqG848mQW6ZPum5nwyCKCRG59VYuxjeYm8LJ9KmvKD25Vs"
+    APP_KEY = "sgc2ifib8wc6fm6"
+    APP_SECRET = "wmxtkc46z6lytgt"
+
+    try:
+        dbx = dropbox.Dropbox(oauth2_access_token=ACCESS_TOKEN, app_key=APP_KEY, app_secret=APP_SECRET)
+
+        with open("files/" + filename, "rb") as f:
+            uploaded_file = dbx.files_upload(f.read(), f"/{filename}")
+
+        print("Finished uploading the file to dropbox")
+            #return file link
+        return dbx.sharing_create_shared_link_with_settings(uploaded_file.path_display).url.replace("dl=0", "dl=1")
+    except Exception as e:
+        print(e)
+        return None
