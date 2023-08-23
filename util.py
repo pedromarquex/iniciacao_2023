@@ -7,7 +7,7 @@ from datetime import datetime
 
 import requests
 
-token = "775f34af6f76fc32a515ca859f208ba3205ad088"
+from config import swissmodel_token
 
 
 def start_automodel_from_fasta_file(fasta_file):
@@ -26,7 +26,7 @@ def start_automodel_from_fasta_file(fasta_file):
 
     response = requests.post(
         "https://swissmodel.expasy.org/automodel",
-        headers={"Authorization": f"Token {token}"},
+        headers={"Authorization": f"Token {swissmodel_token}"},
         json={
             "target_sequences": sequence,
             "project_title": header
@@ -46,7 +46,7 @@ def get_generated_files_from_project_id(project_id):
         # Update the status from the server
         response = requests.get(
             f"https://swissmodel.expasy.org/project/{project_id}/models/summary/",
-            headers={"Authorization": f"Token {token}"})
+            headers={"Authorization": f"Token {swissmodel_token}"})
 
         # Update the status
         status = response.json()["status"]
@@ -79,7 +79,7 @@ def get_pdb_file_from_project_id(project_id):
             for data in response.iter_content():
                 handle.write(data)
 
-        print("Finished downloading", file_name)
+        return file_name
 
 
 def extract_pdb_file_from_gz_file(file):
